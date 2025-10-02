@@ -1,4 +1,4 @@
-name: Merval RSI a Telegram
+name: RSI a Telegram
 
 # Permisos para permitir push del estado
 permissions:
@@ -32,7 +32,8 @@ jobs:
 
       # 4️⃣ Ejecutar el script RSI
       - name: Ejecutar script RSI
-        run: python mi_script_rsi.py
+        run: python mi_script.py
+        
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
