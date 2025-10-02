@@ -20,17 +20,7 @@ if os.path.exists(archivo_estado):
     with open(archivo_estado, "r") as f:
         estado = json.load(f)
 else:
-    estado = {"RSI_estado": "normal"}
-
-# 🔹 Fechas: último año hasta hoy (hora Argentina UTC-3)
-hoy_arg = datetime.now(timezone.utc) - timedelta(hours=3)
-hoy = hoy_arg.replace(hour=0, minute=0, second=0, microsecond=0)
-hace_un_ano = hoy - timedelta(days=365)
-
-# 🔹 Descargar datos del Merval
-merval = yf.download("^MERV", start=hace_un_ano, end=hoy)['Close']
-df = pd.DataFrame(merval)
-df.columns = ['Merval']
+    estado = {}  # Estado independiente por ticker
 
 # 🔹 Función RSI
 def RSI(series, period=14):
@@ -43,28 +33,53 @@ def RSI(series, period=14):
     rsi = 100 - (100 / (1 + rs))
     return rsi
 
-df['RSI'] = RSI(df['Merval'], 14)
-rsi_actual = df['RSI'].iloc[-1]
+# 🔹 Diccionario de tickers
+tickers = {
+    "^MERV": "Merval",
+    "GC=F": "Oro",
+    "GGAL.BA": "Grupo Galicia",
+    "PAMP.BA": "Pampa Energía",
+    "YPFD.BA": "YPF",
+    "RIO": "Rio Tinto",
+    "USDARS=X": "Dólar oficial"
+}
 
-# 🔹 Enviar notificación solo si cambia de estado
-if rsi_actual > 70 and estado.get("RSI_estado") != "sobrecompra":
-    mensaje = f"⚠️ ¡MERVAL RSI {rsi_actual:.2f}! Sobrecompra → posible señal bajista"
-    enviar_mensaje(mensaje)
-    estado["RSI_estado"] = "sobrecompra"
+# 🔹 Fechas: último año hasta hoy (hora Argentina UTC-3)
+hoy_arg = datetime.now(timezone.utc) - timedelta(hours=3)
+hoy = hoy_arg.replace(hour=0, minute=0, second=0, microsecond=0)
+hace_un_ano = hoy - timedelta(days=365)
 
-elif rsi_actual < 30 and estado.get("RSI_estado") != "sobreventa":
-    mensaje = f"✅ ¡MERVAL RSI {rsi_actual:.2f}! Sobreventa → posible señal alcista"
-    enviar_mensaje(mensaje)
-    estado["RSI_estado"] = "sobreventa"
+# 🔹 Loop sobre tickers
+for t, nombre in tickers.items():
+    try:
+        df = yf.download(t, start=hace_un_ano, end=hoy)['Close']
+        if df.empty or len(df) < 14:
+            continue  # No hay datos suficientes
 
-elif 30 <= rsi_actual <= 70 and estado.get("RSI_estado") != "normal":
-    mensaje = f"ℹ️ ¡MERVAL RSI {rsi_actual:.2f}! Volvió a zona neutral (30-70)"
-    enviar_mensaje(mensaje)
-    estado["RSI_estado"] = "normal"
+        df = pd.DataFrame(df)
+        df.columns = ['Close']
+        df['RSI'] = RSI(df['Close'], 14)
+        rsi_actual = df['RSI'].iloc[-1]
 
-else:
-    # 🔹 Si no hubo cambio, enviar mensaje de "sin cambios"
-    enviar_mensaje(f"ℹ️ ¡MERVAL RSI {rsi_actual:.2f}! No hay cambios desde la última medición.")
+        estado_anterior = estado.get(t, "normal")
+
+        # Enviar notificación solo para sobrecompra o sobreventa
+        if rsi_actual > 70 and estado_anterior != "sobrecompra":
+            mensaje = f"⚠️ ({nombre}) RSI {rsi_actual:.2f} → Sobrecompra"
+            enviar_mensaje(mensaje)
+            estado[t] = "sobrecompra"
+
+        elif rsi_actual < 30 and estado_anterior != "sobreventa":
+            mensaje = f"✅ ({nombre}) RSI {rsi_actual:.2f} → Sobreventa"
+            enviar_mensaje(mensaje)
+            estado[t] = "sobreventa"
+
+        elif 30 <= rsi_actual <= 70:
+            estado[t] = "normal"  # Actualiza estado, pero **no envía mensaje**
+
+    except Exception as e:
+        print(f"Error con {nombre}: {e}")
+        continue
 
 # 🔹 Guardar estado actualizado
 with open(archivo_estado, "w") as f:
