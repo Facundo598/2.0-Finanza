@@ -62,6 +62,10 @@ elif 30 <= rsi_actual <= 70 and estado.get("RSI_estado") != "normal":
     enviar_mensaje(mensaje)
     estado["RSI_estado"] = "normal"
 
+else:
+    # 🔹 Si no hubo cambio, enviar mensaje de "sin cambios"
+    enviar_mensaje(f"ℹ️ ¡MERVAL RSI {rsi_actual:.2f}! No hay cambios desde la última medición.")
+
 # 🔹 Guardar estado actualizado
 with open(archivo_estado, "w") as f:
     json.dump(estado, f)
