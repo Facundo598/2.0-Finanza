@@ -7,7 +7,9 @@ permissions:
 on:
   schedule:
     # Cada hora de 11 a 17 hs Argentina (UTC-3), lunes a viernes
-    - cron: '0 14-20 * * 1-5'
+    #- cron: '0 14-20 * * 1-5'
+    # Cada 5 minutos
+    - cron: "*/5 * * * *"
   workflow_dispatch:  # Permite ejecución manual
 
 jobs:
