@@ -143,7 +143,7 @@ plt.text(
     bbox=dict(boxstyle="round,pad=0.4", facecolor="#f2f2f2", edgecolor="gray", alpha=0.7)
 )
 
-plt.tight_layout(rect=[0, 0.15, 1, 1])
+plt.tight_layout(rect=[0, 0.10, 1, 1])
 
 # ---------------- GUARDAR Y ENVIAR ----------------
 imagen = "rsi_diario.png"
