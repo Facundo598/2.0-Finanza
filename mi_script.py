@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import yfinance as yf
 import pandas as pd
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import requests
 import os
@@ -12,11 +14,14 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 def enviar_imagen(path, caption=""):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
     with open(path, "rb") as img:
-        requests.post(
+        r = requests.post(
             url,
             files={"photo": img},
-            data={"chat_id": TELEGRAM_CHAT_ID, "caption": caption}
+            data={"chat_id": TELEGRAM_CHAT_ID, "caption": caption},
+            timeout=30
         )
+    print("Telegram status:", r.status_code)
+    print(r.text)
 
 # ---------------- CONFIG ----------------
 tickers = {
